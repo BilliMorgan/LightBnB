@@ -61,10 +61,10 @@ exports.getUserWithId = getUserWithId;
 const addUser = function (user) {
   let arr = [user.name, user.email, user.password]; // how to change tis input?
 
-  console.log(arr)
+  //console.log(arr)
   return pool.
-  query(
-    `INSERT INTO users (name, email, password)
+    query(
+      `INSERT INTO users (name, email, password)
     VALUES ($1, $2, $3) RETURNING *;
   `, arr)
     .then(res => {
@@ -72,11 +72,7 @@ const addUser = function (user) {
       return res.rows[0]
     })
     .catch(err => console.error('query error', err.stack));
-  // const userId = Object.keys(users).length + 1;
-  // console.log(userId)
-  // user.id = userId;
-  // users[userId] = user;
-  // return Promise.resolve(user);
+
 }
 exports.addUser = addUser;
 
@@ -88,7 +84,26 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  //console.log(guest_id)
+  //let arr = [user.name, user.email, user.password]; // how to change tis input?
+  return pool
+    .query(`
+SELECT properties.*, reservations.*, avg(rating) as average_rating
+FROM reservations
+JOIN properties ON reservations.property_id = properties.id
+JOIN property_reviews ON properties.id = property_reviews.property_id 
+WHERE reservations.guest_id = $1
+AND reservations.end_date < now()::date
+GROUP BY properties.id, reservations.id
+ORDER BY reservations.start_date
+LIMIT $2;
+`, [guest_id, limit])
+    .then(res => {
+      console.log(res.rows)
+      return res.rows
+  })
+    .catch(err => console.error('query error', err.stack));
+  //return getAllProperties(null, 2);
 }
 exports.getAllReservations = getAllReservations;
 
